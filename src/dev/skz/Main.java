@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) {
         Graph graph = Graph.loadGraph();
-        List<Graph.Edge> mst = findMinimumSpanningTreePrim(graph);
+        List<Graph.Edge> mst = findMinimumSpanningTreePrim(graph, PrimMSTAlgorithm.HEAP_OPTIMIZED);
         int cost = calculateCostOfSpanningTree(mst);
         System.out.println(cost);
     }
@@ -18,7 +18,12 @@ public class Main {
         return tree.stream().map(edge -> edge.weight).reduce(0, Integer::sum);
     }
 
-    public static List<Graph.Edge> findMinimumSpanningTreePrim(Graph graph) {
+    public enum PrimMSTAlgorithm {
+        SIMPLE,
+        HEAP_OPTIMIZED
+    }
+
+    public static List<Graph.Edge> findMinimumSpanningTreePrim(Graph graph, PrimMSTAlgorithm primMSTAlgorithm) {
         List<Graph.Edge> mst = new ArrayList<>();
         Set<Graph.Vertex> x = new HashSet<>(graph.vertices.size());
 
@@ -28,27 +33,31 @@ public class Main {
 
         x.add(graph.vertices.values().iterator().next());
 
-        while (x.size() < graph.vertices.size()) {
-            int minWeight = Integer.MAX_VALUE;
-            Graph.Vertex wStar = null;
-            Graph.Edge eStar = null;
-            for (Graph.Vertex v : x) {
-                for (Graph.Edge e : v.edges) {
-                    Graph.Vertex w = e.getOtherVertex(v);
-                    if (!x.contains(w)) {
-                        if (e.weight < minWeight) {
-                            minWeight = e.weight;
-                            wStar = w;
-                            eStar = e;
+        if (primMSTAlgorithm == PrimMSTAlgorithm.SIMPLE) {
+            while (x.size() < graph.vertices.size()) {
+                int minWeight = Integer.MAX_VALUE;
+                Graph.Vertex wStar = null;
+                Graph.Edge eStar = null;
+                for (Graph.Vertex v : x) {
+                    for (Graph.Edge e : v.edges) {
+                        Graph.Vertex w = e.getOtherVertex(v);
+                        if (!x.contains(w)) {
+                            if (e.weight < minWeight) {
+                                minWeight = e.weight;
+                                wStar = w;
+                                eStar = e;
+                            }
                         }
                     }
                 }
-            }
 
-            if (eStar != null) {
-                x.add(wStar);
-                mst.add(eStar);
+                if (eStar != null) {
+                    x.add(wStar);
+                    mst.add(eStar);
+                }
             }
+        } else {
+            // TODO: implement heap optimized algo
         }
 
         return mst;
