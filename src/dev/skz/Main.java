@@ -8,9 +8,50 @@ import java.util.*;
 public class Main {
 
     public static void main(String[] args) {
-	// write your code here
         Graph graph = Graph.loadGraph();
-        System.out.println("hello world!");
+        List<Graph.Edge> mst = findMinimumSpanningTreePrim(graph);
+        int cost = calculateCostOfSpanningTree(mst);
+        System.out.println(cost);
+    }
+
+    public static int calculateCostOfSpanningTree(List<Graph.Edge> tree) {
+        return tree.stream().map(edge -> edge.weight).reduce(0, Integer::sum);
+    }
+
+    public static List<Graph.Edge> findMinimumSpanningTreePrim(Graph graph) {
+        List<Graph.Edge> mst = new ArrayList<>();
+        Set<Graph.Vertex> x = new HashSet<>(graph.vertices.size());
+
+        if (graph.vertices.isEmpty()) {
+            return mst;
+        }
+
+        x.add(graph.vertices.values().iterator().next());
+
+        while (x.size() < graph.vertices.size()) {
+            int minWeight = Integer.MAX_VALUE;
+            Graph.Vertex wStar = null;
+            Graph.Edge eStar = null;
+            for (Graph.Vertex v : x) {
+                for (Graph.Edge e : v.edges) {
+                    Graph.Vertex w = e.getOtherVertex(v);
+                    if (!x.contains(w)) {
+                        if (e.weight < minWeight) {
+                            minWeight = e.weight;
+                            wStar = w;
+                            eStar = e;
+                        }
+                    }
+                }
+            }
+
+            if (eStar != null) {
+                x.add(wStar);
+                mst.add(eStar);
+            }
+        }
+
+        return mst;
     }
 
     public static class Graph {
@@ -92,6 +133,14 @@ public class Main {
                 this.u = u;
                 this.v = v;
                 this.weight = weight;
+            }
+
+            public Vertex getOtherVertex(Vertex u) {
+                if (this.u == u) {
+                    return v;
+                } else {
+                    return this.u;
+                }
             }
         }
     }
