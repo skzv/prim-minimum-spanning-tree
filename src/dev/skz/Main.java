@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -31,7 +32,8 @@ public class Main {
             return mst;
         }
 
-        x.add(graph.vertices.values().iterator().next());
+        Graph.Vertex s = graph.vertices.values().iterator().next();
+        x.add(s);
 
         if (primMSTAlgorithm == PrimMSTAlgorithm.SIMPLE) {
             while (x.size() < graph.vertices.size()) {
@@ -57,10 +59,73 @@ public class Main {
                 }
             }
         } else {
-            // TODO: implement heap optimized algo
+            // initialize
+            Map<Graph.Vertex, ComparableVertex> mapVertexToComparableVertex = new HashMap<>();
+            Queue<ComparableVertex> h = new PriorityQueue<>();
+            for (Graph.Vertex v : graph.vertices.values()) {
+                if (v == s) {
+                    continue;
+                }
+
+                // find winning edge
+                Graph.Edge winningEdge = null;
+                int winningWeight = Integer.MAX_VALUE;
+
+                for (Graph.Edge e : v.edges) {
+                    if (e.getOtherVertex(v) == s) {
+                        if (e.weight < winningWeight) {
+                            winningWeight = e.weight;
+                            winningEdge = e;
+                        }
+                    }
+                }
+
+                ComparableVertex keyedV = new ComparableVertex(winningWeight, v, winningEdge);
+                mapVertexToComparableVertex.put(keyedV.vertex, keyedV);
+                h.add(keyedV);
+            }
+
+            // Main loop
+            while (!h.isEmpty()) {
+                ComparableVertex wStar = h.poll();
+                x.add(wStar.vertex);
+                mst.add(wStar.winningEdge);
+                // update keys to maintain invariant
+                for (Graph.Edge e : wStar.vertex.edges) {
+                    Graph.Vertex y = e.getOtherVertex(wStar.vertex);
+                    if (!x.contains(y)) {
+                        ComparableVertex keyedY = mapVertexToComparableVertex.get(y);
+                        if (e.weight < keyedY.weight) {
+                            // replace
+                            h.remove(keyedY);
+                            ComparableVertex newKeyedY = new ComparableVertex(e.weight, y, e);
+                            mapVertexToComparableVertex.replace(y, newKeyedY);
+                            h.add(newKeyedY);
+                        }
+                    }
+                }
+            }
         }
 
         return mst;
+    }
+
+    public static class ComparableVertex implements Comparable<ComparableVertex> {
+
+        private int weight;
+        public Graph.Vertex vertex;
+        public Graph.Edge winningEdge;
+
+        public ComparableVertex(int weight, Graph.Vertex vertex, Graph.Edge winningEdge) {
+            this.weight = weight;
+            this.vertex = vertex;
+            this.winningEdge = winningEdge;
+        }
+
+        @Override
+        public int compareTo(ComparableVertex o) {
+            return (int) (((long) weight - (long) o.weight) % Integer.MAX_VALUE);
+        }
     }
 
     public static class Graph {
